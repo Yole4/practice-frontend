@@ -73,6 +73,112 @@ app.get('/fetch', (req, res) => {
     })
 });
 
+app.post('/add-chairperson', verifyToken, (req, res) => {
+    const { RorE, campus, college, fullname, email, password, user_id, userRank } = req.body;
+    const givenImage = "givenProfile.png";
+
+    // fetch current date
+    const currentDate = getCurrentFormattedDate();
+
+    const validationRules = [
+        { validator: validator.isLength, options: { min: 1, max: 50 } }
+    ];
+
+    const validatedRorE = sanitizeAndValidate(RorE, validationRules);
+    const validatedCampus = sanitizeAndValidate(campus, validationRules);
+    const validatedCollege = sanitizeAndValidate(college, validationRules);
+    const validatedFullname = sanitizeAndValidate(fullname, validationRules);
+    const validatedEmail = sanitizeAndValidate(email, validationRules);
+    const validatedPassword = sanitizeAndValidate(password, validationRules);
+    const sanitizeUserId = sanitizeAndValidate(user_id, validationRules);
+    const addedBy = sanitizeAndValidate(userRank, validationRules);
+
+    if (!validatedRorE || !validatedCampus || !validatedCollege || !validatedFullname || !validatedEmail || !validatedPassword || !sanitizeUserId || !addedBy) {
+        res.status(401).json({ message: "Invalid Input!" });
+    }
+    else {
+        // check the password length
+        if (validatedPassword.length < 5) {
+            res.status(401).json({ message: "Password must have at least 5 characters!" });
+            return;
+        }
+
+        // const cCheckEmail = 'SELECT * FROM users WHERE email = ? AND rank = ? AND isDelete = ?';
+        const cCheckEmail = `SELECT * FROM users WHERE email = '${email}' AND rank = 'Chairperson' AND isDelete = 'not'`;
+        connection.query(cCheckEmail, (error, results) => {
+            if (error) {
+                res.status(401).json({ message: "Server side error!" });
+            }
+            else {
+                if (results.length === 0) {
+                    // success
+                    // hash password
+                    const hashedPassword = crypto.createHash('sha256').update(validatedPassword).digest('hex');
+                    const insert = `INSERT INTO users (RorE, campus, college, fullname, email, password, added_by, image, date, rank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    connection.query(insert, [validatedRorE, validatedCampus, validatedCollege, validatedFullname, validatedEmail, hashedPassword, addedBy, givenImage, currentDate, "Chairperson"], (error, results) => {
+                        if (error) {
+                            res.status(401).json({ message: "Server side error!" });
+                        }
+                        else {
+                            // get inserted id
+                            const receiverId = results.insertId;
+
+                            // initialize sender and receiver content
+                            const senderContent = `You added ${validatedFullname} as Chairperson at ${validatedCampus} campus college of ${validatedCollege}`;
+                            const receiverContent = `${addedBy} added your account`;
+
+                            // insert into database
+                            const senderData = 'INSERT INTO notification (user_id, content, date) VALUES (?, ?, ?)';
+                            connection.query(senderData, [sanitizeUserId, senderContent, currentDate], (error, results) => {
+                                if (error) {
+                                    res.status(401).json({ message: "Server side error" });
+                                } else {
+                                    // insert reciever notification
+                                    const receiverData = 'INSERT INTO notification (user_id, content, date) VALUES (?, ?, ?)';
+                                    connection.query(receiverData, [receiverId, receiverContent, currentDate], (error, results) => {
+                                        if (error) {
+                                            res.status(401).json({ message: "Server side error!" });
+                                        } else {
+                                            // send to email
+                                            const body = `Hi ${validatedFullname}, ${addedBy} added your account on JRMSU-VPRED using this Email: ${validatedEmail} and Password: ${password} \n\n.Click here to login (sample link here!)`;
+
+                                            var transporter = nodemailer.createTransport({
+                                                service: 'gmail',
+                                                auth: {
+                                                    user: 'jrmsuvpred@gmail.com',
+                                                    pass: 'kbwyyjspjdjerrno'
+                                                }
+                                            });
+
+                                            var mailOptions = {
+                                                from: 'jrmsuvpred@gmail.com',
+                                                to: validatedEmail,
+                                                subject: 'Your verification code!',
+                                                text: body
+                                            };
+
+                                            transporter.sendMail(mailOptions, function (error, info) {
+                                                if (error) {
+                                                    console.log(error);
+                                                } else {
+                                                    res.status(200).json({ message: 'Account has been successfully added and was sent to email successfully!' });
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+                else {
+                    res.status(401).json({ message: "Email is already in used! Please try again!" });
+                }
+            }
+        });
+    }
+})
+
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
