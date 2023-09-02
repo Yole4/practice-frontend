@@ -96,7 +96,7 @@ app.post('/add-chairperson', (req, res) => {
 
         // const cCheckEmail = 'SELECT * FROM users WHERE email = ? AND rank = ? AND isDelete = ?';
         const cCheckEmail = `SELECT * FROM users WHERE email = '${email}' AND rank = 'Chairperson' AND isDelete = 'not'`;
-        connection.query(cCheckEmail, (error, results) => {
+        db.query(cCheckEmail, (error, results) => {
             if (error) {
                 res.status(401).json({ message: "Servesdfsdfsdfsr side error!" });
             }
