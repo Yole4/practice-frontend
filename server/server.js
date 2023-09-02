@@ -100,72 +100,8 @@ app.post('/add-chairperson', (req, res) => {
             if (error) {
                 res.status(401).json({ message: "Servesdfsdfsdfsr side error!" });
             }
-            else {
-                if (results.length === 0) {
-                    // success
-                    // hash password
-                    const hashedPassword = crypto.createHash('sha256').update(validatedPassword).digest('hex');
-                    const insert = `INSERT INTO users (RorE, campus, college, fullname, email, password, added_by, image, rank) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-                    connection.query(insert, [validatedRorE, validatedCampus, validatedCollege, validatedFullname, validatedEmail, hashedPassword, addedBy, givenImage, "Chairperson"], (error, results) => {
-                        if (error) {
-                            res.status(401).json({ message: "Server side error!" });
-                        }
-                        else {
-                            // get inserted id
-                            const receiverId = results.insertId;
-
-                            // initialize sender and receiver content
-                            const senderContent = `You added ${validatedFullname} as Chairperson at ${validatedCampus} campus college of ${validatedCollege}`;
-                            const receiverContent = `${addedBy} added your account`;
-
-                            // insert into database
-                            const senderData = 'INSERT INTO notification (user_id, content) VALUES (?, ?)';
-                            connection.query(senderData, [sanitizeUserId, senderContent], (error, results) => {
-                                if (error) {
-                                    res.status(401).json({ message: "Server side error" });
-                                } else {
-                                    // insert reciever notification
-                                    const receiverData = 'INSERT INTO notification (user_id, content) VALUES (?, ?)';
-                                    connection.query(receiverData, [receiverId, receiverContent], (error, results) => {
-                                        if (error) {
-                                            res.status(401).json({ message: "Server side error!" });
-                                        } else {
-                                            // send to email
-                                            const body = `Hi ${validatedFullname}, ${addedBy} added your account on JRMSU-VPRED using this Email: ${validatedEmail} and Password: ${password} \n\n.Click here to login (sample link here!)`;
-
-                                            var transporter = nodemailer.createTransport({
-                                                service: 'gmail',
-                                                auth: {
-                                                    user: 'jrmsuvpred@gmail.com',
-                                                    pass: 'kbwyyjspjdjerrno'
-                                                }
-                                            });
-
-                                            var mailOptions = {
-                                                from: 'jrmsuvpred@gmail.com',
-                                                to: validatedEmail,
-                                                subject: 'Your verification code!',
-                                                text: body
-                                            };
-
-                                            transporter.sendMail(mailOptions, function (error, info) {
-                                                if (error) {
-                                                    console.log(error);
-                                                } else {
-                                                    res.status(200).json({ message: 'Account has been successfully added and was sent to email successfully!' });
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
-                }
-                else {
-                    res.status(401).json({ message: "Email is already in used! Please try again!" });
-                }
-            }
+            res.status(200).json({message: "success"});
+            
         });
     
 })
