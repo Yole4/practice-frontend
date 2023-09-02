@@ -3,7 +3,7 @@ import axios from 'axios';
 
 function App() {
 
-  const backendUrl = "http://localhost:3001";
+  const backendUrl = "https://practice-backend-q7xj.onrender.com";
   const [name, setName] = useState('');
   const [course, setCourse] = useState('');
   const [id, setId] = useState('');
