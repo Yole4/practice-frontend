@@ -8,7 +8,7 @@ const port = process.env.DB_PORT;
 const app = express();
 app.use(express.json());
 app.use(cors({
-    origin: ['http://localhost:3000'],
+    origin: ['https://practice-render-x95b.onrender.com'],
     methods: ['POST', 'GET']
 }));
 
